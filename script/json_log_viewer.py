@@ -42,10 +42,7 @@ class LogRecord(object):
         elif other.timestamp['sec'] < self.timestamp['sec']:
             return False
 
-        if self.timestamp['usec'] < other.timestamp['usec']:
-            return True
-
-        return False
+        return self.timestamp['usec'] < other.timestamp['usec']
 
     def format_line(self, max_x):
         sec = self.timestamp['sec']
@@ -56,16 +53,14 @@ class LogRecord(object):
             sec -= 1
         t = '%d.%06d' % (sec - begin_sec, udelta)
 
-        ret = '%s+%s: ' % (' ' * (10 - len(t[:10])), t[:10])
+        ret = f"{' ' * (10 - len(t[:10]))}+{t[:10]}: "
         if self.progname == 'sheep':
             hdr = 'sheep %d,%s(%d) ' % \
-                (self.port, self.func, self.line)
+                    (self.port, self.func, self.line)
             ret += hdr[:40] + ' ' * (40 - len(hdr[:40]) + 1)
             ret += self.msg
 
         return ret[:max_x - 1]
-
-        return self.msg
 
 class Process(object):
     def __init__(self, log_file_path):
@@ -78,7 +73,7 @@ class Process(object):
         self.color = color
 
     def peek_next_record(self):
-        if self.next_record == None:
+        if self.next_record is None:
             next_line = self.log_file.readline()
             if next_line == '':
                 # end of the log
@@ -120,10 +115,7 @@ def init_curses():
         curses.init_pair(i, curses_colors[i - 1], curses.COLOR_BLACK)
 
 def assign_color(procs):
-    sheeps = []
-    for proc in procs:
-        if proc.peek_next_record().is_sheep():
-            sheeps.append(proc)
+    sheeps = [proc for proc in procs if proc.peek_next_record().is_sheep()]
     nr_sheeps = len(sheeps)
 
     if nr_curses_colors < nr_sheeps:
@@ -164,12 +156,12 @@ def unify_records(procs):
             proc = procs[i]
             rec = proc.peek_next_record()
 
-            if rec == None:
+            if rec is None:
                 is_empty[i] = True
                 nr_empteis += 1
                 continue
 
-            if next_rec == None:
+            if next_rec is None:
                 next_rec = rec
                 continue
 
@@ -177,7 +169,7 @@ def unify_records(procs):
                 next_rec = rec
                 continue
 
-        if next_rec == None:
+        if next_rec is None:
             assert nr_empteis == nr_procs
             break
 
