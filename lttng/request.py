@@ -110,7 +110,7 @@ class Client:
         self.ongoing_reqs = {}
 
     def feed_event(self, e):
-        if not e['request'] in self.ongoing_reqs:
+        if e['request'] not in self.ongoing_reqs:
             if e.name != "request:rx_work":
                 return
             req = Request(e['request'])
@@ -132,13 +132,11 @@ def is_focusing_events(event):
         return True
     if event.name == "request:tx_work":
         return True
-    if event.name == "request:tx_main":
-        return True
-    return False
+    return event.name == "request:tx_main"
 
 def req_stat():
     if len(sys.argv) != 2:
-        msg = 'Usage: python {} TRACEPATH'.format(sys.argv[0])
+        msg = f'Usage: python {sys.argv[0]} TRACEPATH'
         raise ValueError(msg)
 
     # a trace collection holds one to many traces
@@ -165,7 +163,7 @@ def req_stat():
             continue
 
         # events of rx/tx
-        if not event['fd'] in clients:
+        if event['fd'] not in clients:
             continue
 
         clients[event['fd']].feed_event(event)

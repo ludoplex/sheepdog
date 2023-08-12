@@ -19,21 +19,21 @@ class ThreeNodesTwoCopiesTest(unittest.TestCase):
     _disks = []
 
     @classmethod
-    def setUpClass(clazz):
-        for i in range(clazz._NR_NODES):
+    def setUpClass(cls):
+        for i in range(cls._NR_NODES):
             t = fixture.CreateSheepdogDisk(1024 ** 3)
             p = i + 7000
             z = i + 1
             fixture.StartSheep(t[1], port=p, zone=z)
-            clazz._ports.append(p)
-            clazz._disks.append(t)
+            cls._ports.append(p)
+            cls._disks.append(t)
         time.sleep(2)
 
     @classmethod
-    def tearDownClass(clazz):
+    def tearDownClass(cls):
         fixture.ShutdownCluster()
         time.sleep(2)
-        for t in clazz._disks:
+        for t in cls._disks:
             fixture.DestroySheepdogDisk(t[0], t[1])
 
     def _assertUnique(self, function, iterable):
@@ -411,7 +411,7 @@ class ThreeNodesTwoCopiesTest(unittest.TestCase):
         for i in range(NB_VDI / NB_OBJECT):
             oid = (a_vid << 32) | i
             obj_name = format(oid, 'x').zfill(16)
-            obj_full_path = self.__class__._disks[p-7000][1] + "/obj/" + obj_name
+            obj_full_path = f"{self.__class__._disks[p - 7000][1]}/obj/{obj_name}"
 
             check_path_list = fixture.FindObjFileName(self.__class__._disks, obj_name)
             self.assertEqual(self.__class__._COPIES, len(check_path_list))
@@ -444,7 +444,7 @@ class ThreeNodesTwoCopiesTest(unittest.TestCase):
         for i in range(NB_VDI / NB_OBJECT):
             oid = (a_vid << 32) | i
             obj_name = format(oid, 'x').zfill(16)
-            obj_full_path = self.__class__._disks[p-7000][1] + "/obj/" + obj_name
+            obj_full_path = f"{self.__class__._disks[p - 7000][1]}/obj/{obj_name}"
 
             check_path_list = fixture.FindObjFileName(self.__class__._disks, obj_name)
             self.assertEqual(self.__class__._COPIES, len(check_path_list))

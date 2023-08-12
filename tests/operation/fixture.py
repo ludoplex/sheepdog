@@ -65,9 +65,7 @@ def MakeDisksArg(disks):
     disksType = type(disks)
     if disksType == str:
         return disks
-    if disksType in (tuple, list):
-        return ",".join(disks)
-    return None
+    return ",".join(disks) if disksType in (tuple, list) else None
 
 
 def StartSheep(disks, port=None, zone=None, cluster=None):
@@ -76,14 +74,10 @@ def StartSheep(disks, port=None, zone=None, cluster=None):
         raise ValueError
     cmd = ["sudo", "sheep"]
     if port is not None:
-        cmd.append("--port")
-        cmd.append(str(port))
+        cmd.extend(("--port", str(port)))
     if zone is not None:
-        cmd.append("--zone")
-        cmd.append(str(zone))
-    cmd.append("--cluster")
-    cmd.append(cluster or "local")
-    cmd.append(disksArg)
+        cmd.extend(("--zone", str(zone)))
+    cmd.extend(("--cluster", (cluster or "local"), disksArg))
     subprocess.check_output(cmd)
     return True
 
@@ -97,10 +91,8 @@ def KillLocalNode(port):
 def ForceFormatCluster(copies, port=None):
     cmd = ["dog", "cluster", "format", "--force"]
     if port is not None:
-        cmd.append("--port")
-        cmd.append(str(port))
-    cmd.append("--copies")
-    cmd.append(str(copies))
+        cmd.extend(("--port", str(port)))
+    cmd.extend(("--copies", str(copies)))
     subprocess.check_output(cmd)
     return True
 
@@ -108,8 +100,7 @@ def ForceFormatCluster(copies, port=None):
 def ShutdownCluster(port=None):
     cmd = ["dog", "cluster", "shutdown"]
     if port is not None:
-        cmd.append("--port")
-        cmd.append(str(port))
+        cmd.extend(("--port", str(port)))
     subprocess.check_output(cmd)
     return True
 
@@ -117,12 +108,10 @@ def ShutdownCluster(port=None):
 def CreateVDI(name, nb_size=4194304, prealloc=False, port=None):
     cmd = ["dog", "vdi", "create"]
     if port is not None:
-        cmd.append("--port")
-        cmd.append(str(port))
+        cmd.extend(("--port", str(port)))
     if prealloc:
         cmd.append("--prealloc")
-    cmd.append(name)
-    cmd.append(str(nb_size))
+    cmd.extend((name, str(nb_size)))
     subprocess.check_output(cmd)
     return True
 
@@ -130,11 +119,9 @@ def CreateVDI(name, nb_size=4194304, prealloc=False, port=None):
 def DeleteVDI(name, tag=None, port=None):
     cmd = ["dog", "vdi", "delete"]
     if port is not None:
-        cmd.append("--port")
-        cmd.append(str(port))
+        cmd.extend(("--port", str(port)))
     if tag is not None:
-        cmd.append("--snapshot")
-        cmd.append(tag)
+        cmd.extend(("--snapshot", tag))
     cmd.append(name)
     subprocess.check_output(cmd)
     return True
@@ -143,9 +130,7 @@ def DeleteVDI(name, tag=None, port=None):
 def ListVDI(port=None):
     cmd = ["dog", "vdi", "list", "--raw"]
     if port is not None:
-        cmd.append("--port")
-        cmd.append(str(port))
-
+        cmd.extend(("--port", str(port)))
     out = subprocess.check_output(cmd)
     if len(out) == 0:
         return []
@@ -169,8 +154,7 @@ def ListVDI(port=None):
 def WriteVDI(name, content, port=None):
     cmd = ["dog", "vdi", "write"]
     if port is not None:
-        cmd.append("--port")
-        cmd.append(str(port))
+        cmd.extend(("--port", str(port)))
     cmd.append(name)
 
     dog = subprocess.Popen(cmd, stdin=subprocess.PIPE)
@@ -184,11 +168,9 @@ def WriteVDI(name, content, port=None):
 def ReadVDI(name, tag=None, offset=None, length=None, port=None):
     cmd = ["dog", "vdi", "read"]
     if port is not None:
-        cmd.append("--port")
-        cmd.append(str(port))
+        cmd.extend(("--port", str(port)))
     if tag is not None:
-        cmd.append("--snapshot")
-        cmd.append(tag)
+        cmd.extend(("--snapshot", tag))
     cmd.append(name)
     if offset is not None:
         cmd.append(str(offset))
@@ -200,11 +182,8 @@ def ReadVDI(name, tag=None, offset=None, length=None, port=None):
 def SnapshotVDI(name, tag, port=None):
     cmd = ["dog", "vdi", "snapshot"]
     if port is not None:
-        cmd.append("--port")
-        cmd.append(str(port))
-    cmd.append("--snapshot")
-    cmd.append(tag)
-    cmd.append(name)
+        cmd.extend(("--port", str(port)))
+    cmd.extend(("--snapshot", tag, name))
     subprocess.check_output(cmd)
     return True
 
@@ -212,31 +191,22 @@ def SnapshotVDI(name, tag, port=None):
 def CloneVDI(src, tag, dst, port=None):
     cmd = ["dog", "vdi", "clone"]
     if port is not None:
-        cmd.append("--port")
-        cmd.append(str(port))
-    cmd.append("--snapshot")
-    cmd.append(tag)
-    cmd.append(src)
-    cmd.append(dst)
+        cmd.extend(("--port", str(port)))
+    cmd.extend(("--snapshot", tag, src, dst))
     subprocess.check_output(cmd)
     return True
 
 def GetObjFileName(directory):
-    cmd = ["ls"]
-    obj_dir = directory + "/obj"
-    cmd.append(obj_dir)
+    obj_dir = f"{directory}/obj"
+    cmd = ["ls", obj_dir]
     rslt = (subprocess.check_output(cmd)).split('\n')
     rslt.remove('')
     return rslt
 
 def FindObjFileName(disks, file_name):
     cmd = ["find"]
-    for img, mnt in disks:
-        cmd.append(mnt)
-    cmd.append("-type")
-    cmd.append("f")
-    cmd.append("-name")
-    cmd.append(file_name)
+    cmd.extend(mnt for img, mnt in disks)
+    cmd.extend(("-type", "f", "-name", file_name))
     rslt = (subprocess.check_output(cmd)).split('\n')
     rslt.remove('')
     return rslt
@@ -244,5 +214,4 @@ def FindObjFileName(disks, file_name):
 def GetMd5(file_path):
     cmd = ["md5sum", file_path]
     rslt_list = (subprocess.check_output(cmd)).split()
-    rslt = rslt_list[0]
-    return rslt
+    return rslt_list[0]
